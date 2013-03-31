@@ -37,8 +37,16 @@ int redPin = 13;
 int greenPin = 12;
 int bluePin = 10;
 
+//delay between the lock opening and re-locking
+int lockDelay = 5000;
+
 //which pin is the relay or servo on?
 int controlPin = 11;
+
+//define the locktype:
+// deadbolt - use a servo attached to the deadbolt
+// strikeplate - use a no relay on the power to a electric strike plate 
+String lockType = "deadbolt";
 
 //what values do you need for your servo to open or close the lock? (ignore these if not using a deadbolt)
 int servoClose = 0;
@@ -46,13 +54,6 @@ int servoOpen = 180;
 
 String code = "";
 
-//define the locktype:
-// deadbolt - use a servo
-// strikeplate - use a no realy
-String lockType = "deadbolt";
-
-//delay between the lock opening and re-locking
-int lockDelay = 5000;
 
 Servo myservo;  // create servo object to control a servo 
                 // a maximum of eight servo objects can be created 
