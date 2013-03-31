@@ -1,4 +1,30 @@
-// 4 X 4 Keypad, common anode rgb led, servo
+//****************************************************************************
+//*   ArduLock                                                               *
+//*   ArduLock will take input from a 4x4 digit pad, use a servo or relay to *
+//*    open a lock, and will give user feedback with a rgb led. It stores    *
+//*    the pin in the eeprom to allow the user to change it without          *
+//*    reflashing.                                                           *
+//*                                                                          *
+//*   Copyright (C) 2013 by Jeremy Falling except where noted.               *
+//*                                                                          *
+//*   This program is free software: you can redistribute it and/or modify   *
+//*   it under the terms of the GNU General Public License as published by   *
+//*   the Free Software Foundation, either version 3 of the License, or      *
+//*   (at your option) any later version.                                    *
+//*                                                                          *
+//*   This program is distributed in the hope that it will be useful,        *
+//*   but WITHOUT ANY WARRANTY; without even the implied warranty of         *
+//*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          *
+//*   GNU General Public License for more details.                           *
+//*                                                                          *
+//*   You should have received a copy of the GNU General Public License      *
+//*   along with this program.  If not, see <http://www.gnu.org/licenses/>.  *
+//****************************************************************************
+
+
+// devices used: 4 X 4 Keypad, common anode rgb led, servo
+
+
 
 #include <Keypad.h>
 #include <Servo.h> 
@@ -6,11 +32,24 @@
 
 int position = 0;
 
-String secretCode; 
+String pinCode; 
 int redPin = 13;
 int greenPin = 12;
 int bluePin = 10;
+
+//which pin is the relay or servo on?
+int controlPin = 11;
+
+//what values do you need for your servo to open or close the lock? (ignore these if not using a deadbolt)
+int servoClose = 0;
+int servoOpen = 180;
+
 String code = "";
+
+//define the locktype:
+// deadbolt - use a servo
+// strikeplate - use a no realy
+String lockType = "deadbolt";
 
 //delay between the lock opening and re-locking
 int lockDelay = 5000;
@@ -39,10 +78,19 @@ Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
   
 
 void setup(){
-  myservo.attach(11);  // attaches the servo on pin 9 to the servo object 
+
+  if (lockType == "deadbolt"){
+  	myservo.attach(controlPin); 
+  	myservo.write(0); 
+  }
+  else if (lockType == "strikeplate"){
+      pinMode(controlPin, OUTPUT);
+  }
+
+
   Serial.begin(9600);
+
   setLocked(true);
-  myservo.write(0); 
   
   pinMode(redPin, OUTPUT);
   pinMode(greenPin, OUTPUT);
@@ -82,14 +130,14 @@ void setup(){
   int address = 1;
 
   currentVal = EEPROM.read(0);
-  secretCode = String(currentVal);
+  pinCode = String(currentVal);
   
   while(valid = true) {
     
     currentVal = EEPROM.read(address);
     
     if (currentVal != 255){
-      secretCode = secretCode + String(currentVal);
+      pinCode = pinCode + String(currentVal);
     }
     else {
       valid = false;
@@ -103,16 +151,17 @@ void setup(){
 
     }
   }
-    Serial.print("finished: ");
-  Serial.println(secretCode);
+    Serial.println("finished ");
+    //uncomment to print code to serial
+//  Serial.println(pinCode);
   
   
-  //assume 10 0's means the eprom is empty
-  if (secretCode == "0000000000") {
+  //assume 10 0's means the eprom is empty so use a default pin
+  if (pinCode == "0000000000") {
     
-  secretCode = "12345";
+  pinCode = "12345";
   Serial.print("invalid code, using default: ");
-  Serial.println(secretCode);
+  Serial.println(pinCode);
   }
 }
 
@@ -148,7 +197,7 @@ void loop()
       
       //use * as enter
       else if (key == '*') {
-          if (code == secretCode)
+          if (code == pinCode)
           {
              setLocked(false);
              code = "";
@@ -171,7 +220,7 @@ void loop()
       //use A to change pin
       else if (key == 'A') {
     
-          if (code == secretCode)
+          if (code == pinCode)
           {
 
              code = "";
@@ -207,9 +256,11 @@ void loop()
                         break;
                       }
                       else {
-                        Serial.print("new code accepted: ");
-                        Serial.println(code);
-                        secretCode = code;
+                        Serial.print("new code accepted ");
+                        //uncomment to print new code to serial. 
+                        //Serial.println(code);
+                        
+                        pinCode = code;
                         
                         int i=0;
                         while (i < codeLength){
@@ -220,10 +271,7 @@ void loop()
                            currentDigit = currentDigit - 48;
                            
                             EEPROM.write(i, currentDigit);
-                            
-
-                                  Serial.println(i);
-                            
+      
                            i++;
                         } 
                         
@@ -236,8 +284,6 @@ void loop()
                          while (i < tempCount){
                            int foo = codeLength + i;
                            EEPROM.write(foo, 255);
-                           
-                           Serial.println(foo);
                             
                            i++;
                           }  
@@ -296,7 +342,6 @@ void loop()
       
       //if no other case matches, store value
       else{
-        Serial.println(key); 
         code = code + String(key);
       }
       
@@ -308,12 +353,27 @@ void loop()
 void setLocked(int locked)
 {
   if (locked) {
-    myservo.write(0);
+  
+	if (lockType == "deadbolt"){
+	   myservo.write(servoClose);
+	}
+	else if (lockType == "strikeplate"){
+	  digitalWrite(controlPin, LOW);
+	}
+
     digitalWrite(redPin, LOW);
     digitalWrite(greenPin, HIGH);
+    
   }
   else {
-    myservo.write(180);
+
+	  if (lockType == "deadbolt"){
+		myservo.write(servoOpen);
+	  }
+	  else if (lockType == "strikeplate"){
+		  digitalWrite(controlPin, HIGH);
+	  }  
+
     digitalWrite(redPin, HIGH);
     digitalWrite(greenPin, LOW); 
     
