@@ -170,7 +170,7 @@ void setup(){
   }
   Serial.println("finished ");
   //uncomment to print code to serial
-  Serial.println(pinCode);
+  //Serial.println(pinCode);
 
 
   //assume 10 0's means the eprom is empty so use a default pin
@@ -262,20 +262,27 @@ void loop()
             //stop with *
             if (key == '*') {
               cont = false;
-
-
+              
               //count length of string, set that many addresses in the eprom
               // and if <10, blank remain with 255. else dont. 
-              int codeLength = code.length();
-              if (codeLength > 10){
+              int pinLength = code.length();
+              if (pinLength > 10){
                 Serial.println("code too long");
                 code = "";
                 digitalWrite(bluePin, ledOff);  
                 blinkLedError();
                 break;
               }
+              //check if pin lenght is less then 1 digit
+              else if(pinLength < 1){
+                Serial.println("code too short");
+                code = "";
+                digitalWrite(bluePin, ledOff);  
+                blinkLedError();
+                break;
+              }
 
-              //pin is short enough, continue
+              //pin is of proper length, continue
               else {
                 //flash green led
                 digitalWrite(bluePin, ledOff);
@@ -318,7 +325,7 @@ void loop()
                         pinCode = code;
 
                         int i=0;
-                        while (i < codeLength){
+                        while (i < pinLength){
                           //get the ascii value of the curent digit
                           byte currentDigit = code.charAt(i);
 
@@ -372,13 +379,13 @@ void loop()
                 } 
 
                 //put null chars for the remaining addresses
-                if (codeLength < 10){
-                  int tempCount = 10 - codeLength;
+                if (pinLength < 10){
+                  int tempCount = 10 - pinLength;
 
 
                   int i=0 ;
                   while (i < tempCount){
-                    int foo = codeLength + i;
+                    int foo = pinLength + i;
                     EEPROM.write(foo, 255);
 
                     i++;
