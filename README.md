@@ -14,7 +14,7 @@ The default pin is 12345.
 
 Press # to clear the temp memory. Light will flash green once.
 
-To change pin, enter the current pin followed by A. The led will turn blue. Enter a new pin of up to 10 numbers followed by * (do not use 10 0s). If the pin was successfully change the led will flash blue before turning red. 
+To change pin, enter the current pin followed by "A". The led will turn blue if correct. Enter a new pin of up to 10 numbers followed by * (do not use 10 0s).  If the pin passes validation the led will flash green. Enter the new pin again. If the pin was entered the same both times and was successfully change the led will flash blue before turning red. 
 
 
 If you forget your pin, your will need to clear the eeprom. The eeprom_clear example provided with the Arduino IDE will do the trick. 
